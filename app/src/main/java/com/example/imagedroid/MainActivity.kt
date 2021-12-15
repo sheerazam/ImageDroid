@@ -82,7 +82,7 @@ fun DroidImageContent(listItems: List<GetPhotosResponseItem>) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
-                imageUrl = image.urls?.full ?: ""
+                imageUrl = image.urls?.small ?: ""
             )
         }
     }
