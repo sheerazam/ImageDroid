@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.example.imagedroid.data.base.produceUiState
+import com.example.imagedroid.data.model.GetPhotosResponseItem
 import com.example.imagedroid.data.repository.ImagesRepository
 import com.example.imagedroid.ui.theme.ImageDroidTheme
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -50,43 +51,76 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@ExperimentalCoilApi
 @Composable
-fun DroidImagesMainListScreen(repository: ImagesRepository){
+fun DroidImagesMainListScreen(repository: ImagesRepository) {
     val (photosUIState, refreshPhotos, clearError) = produceUiState(producer = repository) {
         repository.loadPhotos()
     }
+
+    LoadingContent(
+        empty = photosUIState.value.initialLoad,
+        emptyContent = { FullScreenLoading() },
+        loading = photosUIState.value.loading,
+        onRefresh = { refreshPhotos() },
+        swipeRefreshEnabled = true,
+        content = {
+            DroidImageContent(listItems = photosUIState.value.data ?: mutableListOf())
+        }
+    )
 }
+
 
 @ExperimentalCoilApi
 @Composable
-fun DroidImageListScreen() {
-    val images = mutableListOf(
-        "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60",
-        "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60",
-        "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60",
-        "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60",
-    )
+fun DroidImageContent(listItems: List<GetPhotosResponseItem>) {
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         items(
-            items = images,
+            items = listItems,
         ) { image ->
             DroidImage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
-                imageUrl = image
+                imageUrl = image.urls?.full ?: ""
             )
         }
     }
 }
 
-@ExperimentalCoilApi
 @Composable
-fun DroidImageScreen() {
-    DroidImage(
-        modifier = Modifier,
-        imageUrl = "https://www.android.com/static/2016/img/share/andy-lg.png"
-    )
+fun LoadingContent(
+    empty: Boolean,
+    emptyContent: @Composable () -> Unit,
+    loading: Boolean,
+    onRefresh: () -> Unit = {},
+    content: @Composable () -> Unit,
+    swipeRefreshEnabled: Boolean = false
+) {
+    if (empty) {
+        emptyContent()
+    } else {
+        if (swipeRefreshEnabled) {
+            SwipeRefresh(
+                state = rememberSwipeRefreshState(loading),
+                onRefresh = onRefresh,
+                content = content,
+            )
+        } else {
+            content()
+        }
+    }
+}
+
+@Composable
+fun FullScreenLoading() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center)
+    ) {
+        CircularProgressIndicator()
+    }
 }
 
 @ExperimentalCoilApi
